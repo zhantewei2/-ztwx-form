@@ -66,22 +66,32 @@ export class Form {
             controller.errors = [];
             controller.valueChange && controller.valueChange.next(controller);
         }
+        controller.errorsChange=new Subject<string[]>();
     }
 
-    handleControllerValidators(controller: Controller) {
+    async handleControllerValidators(controller: Controller) {
         if (controller.validator instanceof Array) {
-            controller.validator.forEach(validator => this.handleControllerValidator(controller, validator))
+            for(let validator of controller.validator){
+                await this.handleControllerValidator(controller,validator);
+            }
         } else {
             this.handleControllerValidator(controller, controller.validator);
         }
+        controller.errorsChange&&controller.errorsChange.next(controller.errors||[]);
     }
 
-    handleControllerValidator(controller: Controller, validator: Validator) {
-        const isPass = validator.apply(controller.value);
-        if (isPass || !controller.errors) return;
+    async handleControllerValidator(controller: Controller, validator: Validator) {
+        const isPass:boolean|Promise<boolean> = validator.apply(controller.value);
+        let result:boolean=false;
+        if(isPass instanceof Promise){
+            result=await isPass;
+        }else{
+            result=isPass;
+        }
+        if (result || !controller.errors) return;
         controller.errors.push(
             typeof (validator.errMessage) == "string" ? validator.errMessage : validator.errMessage(controller.value)
-        )
+        );
     }
 
     reset() {
@@ -94,6 +104,8 @@ export class Form {
         return this.value;
     }
 
+
+
     get isPass(): boolean {
         for (let controller of this.controllers) {
             if (controller.errors && controller.errors.length) return false;
@@ -101,13 +113,12 @@ export class Form {
         return true;
     }
 
-    checkValidators(): boolean {
-        this.controllers.forEach(controller => {
+    async checkValidators(): Promise<boolean> {
+        for(let controller of this.controllers){
             controller.errors = [];
-            this.handleControllerValidators(controller);
-            //提交检测
+            await this.handleControllerValidators(controller);
             controller.valueChange && controller.valueChange.next(controller);
-        });
+        }
         return this.isPass;
     }
 }

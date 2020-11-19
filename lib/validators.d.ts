@@ -14,10 +14,10 @@ export declare class Form {
     constructor(controllers: Controller[]);
     appendValue(controller: Controller): void;
     handleController(controller: Controller): void;
-    handleControllerValidators(controller: Controller): void;
-    handleControllerValidator(controller: Controller, validator: Validator): void;
+    handleControllerValidators(controller: Controller): Promise<void>;
+    handleControllerValidator(controller: Controller, validator: Validator): Promise<void>;
     reset(): void;
     toSerializer(): Record<string, any>;
     get isPass(): boolean;
-    checkValidators(): boolean;
+    checkValidators(): Promise<boolean>;
 }
