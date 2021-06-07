@@ -1,4 +1,4 @@
-import {Controller, Validator, ValueType} from "./share";
+import {Controller, FormVal, Validator, ValueType} from "./share";
 import {SubjectOrder, Subject} from "./Subject";
 
 export {
@@ -14,7 +14,7 @@ export class Form {
     controllerChangeSubject: Subject<Controller> = new Subject<Controller>();
     valueChange: Subject<{ [key: string]: Controller }> = new Subject<{ [key: string]: Controller }>();
     controllerDict: { [key: string]: Controller } = {};
-    public value: Record<string, ValueType> = {};
+    public value: FormVal = {};
 
     constructor(
         controllers: Controller[]
@@ -77,7 +77,7 @@ export class Form {
     }
 
     handleControllerValidator(controller: Controller, validator: Validator) {
-        const isPass = validator.apply(controller.value);
+        const isPass = validator.apply(controller.value,this.value);
         if (isPass || !controller.errors) return;
         controller.errors.push(
             typeof (validator.errMessage) == "string" ? validator.errMessage : validator.errMessage(controller.value)

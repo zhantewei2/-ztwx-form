@@ -4,8 +4,10 @@ export type ValidatorErrMessage = ((value: any) => string) | string;
 
 export type ValueType = string | number | undefined |boolean;
 
+export type FormVal= Record<string, ValueType>;
+
 export interface Validator {
-    apply: (value: ValueType) => boolean;
+    apply: (value: ValueType,formValue?:FormVal) => boolean;
     name: string;
     errMessage: ValidatorErrMessage;
 }
@@ -25,3 +27,4 @@ export interface Controller {
     changeObservable?:()=>Subject<Controller>;
     _changeObservable?:Subject<Controller>;
 }
+export type FnValidatorCb=(value:ValueType,formVal:FormVal)=>boolean;

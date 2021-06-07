@@ -1,4 +1,4 @@
-import { Controller, Validator, ValueType } from "./share";
+import { Controller, FormVal, Validator, ValueType } from "./share";
 import { SubjectOrder, Subject } from "./Subject";
 export { Controller, Validator, ValueType, Subject, SubjectOrder };
 export declare class Form {
@@ -10,7 +10,7 @@ export declare class Form {
     controllerDict: {
         [key: string]: Controller;
     };
-    value: Record<string, ValueType>;
+    value: FormVal;
     constructor(controllers: Controller[]);
     appendValue(controller: Controller): void;
     handleController(controller: Controller): void;

@@ -1,8 +1,9 @@
 import { Subject, SubjectOrder } from "./Subject";
 export declare type ValidatorErrMessage = ((value: any) => string) | string;
 export declare type ValueType = string | number | undefined | boolean;
+export declare type FormVal = Record<string, ValueType>;
 export interface Validator {
-    apply: (value: ValueType) => boolean;
+    apply: (value: ValueType, formValue?: FormVal) => boolean;
     name: string;
     errMessage: ValidatorErrMessage;
 }
@@ -20,3 +21,4 @@ export interface Controller {
     changeObservable?: () => Subject<Controller>;
     _changeObservable?: Subject<Controller>;
 }
+export declare type FnValidatorCb = (value: ValueType, formVal: FormVal) => boolean;
