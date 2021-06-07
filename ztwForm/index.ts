@@ -8,6 +8,7 @@ import rangeLengthValidator from "./validators/rangeLength.validator";
 import requiredValidator from "./validators/required.validator";
 import regExpValidator from "./validators/regExp.validator";
 import fnValidator from "./validators/fn.validator";
+export {ControllerItem} from "./Controller";
 import {
     Controller,
     Validator,
@@ -19,6 +20,7 @@ import {
 import {FormUpdateVersion as Form} from "./FormUpdate";
 
 export {
+    Controller,
     emailValidator,
     maxLengthValidator,
     maxValidator,
@@ -28,7 +30,6 @@ export {
     rangeValidator,
     requiredValidator,
     Form,
-    Controller,
     Validator,
     ValueType,
     Subject,

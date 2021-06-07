@@ -1,27 +1,16 @@
 import {Form} from "./validators";
-import {Controller} from "./share";
-import {filterUpdate} from "./filterUpdate";
-import {ControllerUpdate} from "./ControllerUpdate";
-/**
- * 相同为 true,不同为false
- * 忽略为 undefined;
- */
-export type CheckMiddleFn=(key:string,originalValue:any,changedValue:any)=>boolean|undefined;
+import {ControllerOpt} from "./share";
 
 export class FormUpdateVersion extends Form{
-    controllerUpdate:ControllerUpdate;
     constructor(
-         controllers: Controller[]
+         controllerOpts: ControllerOpt[]
     ) {
-        super(controllers);
-        this.controllerUpdate=new ControllerUpdate(this);
-        this.controllerUpdate.defineControllersUpdate();
+        super(controllerOpts);
     }
-
-    originalValue:Record<string, any>={};
+ 
     clearChange(){
         this._isChanged=false;
-        this.controllerUpdate.clearChange();
+        this.controllers.forEach(i=>i.resetChange());
     }
     /**
      * 设置待更新的原始数据
@@ -30,70 +19,57 @@ export class FormUpdateVersion extends Form{
     setOriginValue(
         originalValue:Record<string, any>,
     ){
-        this.originalValue={};
         this.clearChange();
+        this.fillOriginVal(originalValue);
+    }
+    fillOriginVal(value:Record<string, any>){
         Object.keys(this.value).forEach((key:string)=>{
-            this.value[key]=this.originalValue[key]=originalValue[key];
+            this.controllerDict[key].setOrigin(value[key])
         })
     }
-
     updateOriginValue(
         updateValue:Record<string, any>
     ){
-        Object.keys(updateValue).forEach(key=>{
-            this.value[key]=this.originalValue[key]=updateValue[key];
-        });
-        if(!this.getUpdatedValue())this.clearChange();
+       this.fillOriginVal(updateValue);
+       if(!this.getUpdatedValue())this.clearChange();
     }
 
-    resetOriginValue(){
-        Object.keys(this.originalValue).forEach((key:string)=>{
-            this.value[key]=this.originalValue[key];
-        });
+    reset(){
+        super.reset();
         this.clearChange();
     }
     /**
      * 获取发生更改的值
      */
     getUpdatedValue():undefined|Record<string, any>{
-        const updatedValue:Record<string, any>={};
-        let originValue:any,currentValue:any;
-        let checkResult:boolean|undefined;
-        Object.keys(this.originalValue).forEach(key=>{
-            originValue=this.originalValue[key];
-            currentValue=this.value[key];
-
-            ([originValue,currentValue]=filterUpdate(originValue,currentValue));
-
-            if(this.checkMiddleFn){
-                checkResult=this.checkMiddleFn(key,originValue,currentValue);
-                if(checkResult!==undefined){
-                    if(!checkResult)updatedValue[key]=currentValue;
-                    return;
-                }
-            }
-            if(originValue!==currentValue){
-                updatedValue[key]=currentValue
-            }
-        });
-        return Object.keys(updatedValue).length>0?updatedValue:undefined;
+        const updateValue:Record<string, any>={};
+        
+        this.controllers.forEach(controller=>{
+            if(controller.checkOriginChange())updateValue[controller.id]=controller.value;
+        })
+        return Object.keys(updateValue).length?updateValue:undefined;
     }
-    checkMiddleFn?:CheckMiddleFn;
-
-    setCheckMiddleware(checkFn:CheckMiddleFn){
-        this.checkMiddleFn=checkFn;
-    }
-
+    
     changeOrderExists:boolean=false;
     _isChanged:boolean=false;
-
+    
+    checkChanged(){
+        for(let i of this.controllers){
+            if(i.changed)return true;
+        }
+        return false;
+    }
     get isChanged():boolean{
         if(!this.changeOrderExists){
-            this.valueChange.subscribe(()=>{
-                this._isChanged=!!this.getUpdatedValue();
-            });
-            this.changeOrderExists=true;
-            return !!this.getUpdatedValue();
+            this.valueChange.subscribe(dict=>{
+                for(let i in dict){
+                    if(dict[i].changed){
+                        this._isChanged=true;
+                        break;
+                    }
+                }
+            })
+            return this._isChanged=this.checkChanged();
         }
         return this._isChanged;
     }

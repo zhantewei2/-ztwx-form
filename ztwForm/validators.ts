@@ -1,5 +1,6 @@
-import {Controller, Validator, ValueType} from "./share";
+import {Controller, ControllerOpt, ErrorVal, FormVal, Validator, ValueType} from "./share";
 import {SubjectOrder, Subject} from "./Subject";
+import {ControllerItem} from "./Controller";
 
 export {
     Controller,
@@ -8,117 +9,80 @@ export {
     Subject,
     SubjectOrder
 }
+export type ErrorsDict=Record<string, ErrorVal>;
 
 export class Form {
-    controllers: Controller[];
-    controllerChangeSubject: Subject<Controller> = new Subject<Controller>();
-    valueChange: Subject<{ [key: string]: Controller }> = new Subject<{ [key: string]: Controller }>();
-    controllerDict: { [key: string]: Controller } = {};
-    public value: Record<string, ValueType> = {};
-
+    controllers: ControllerItem[]=[];
+    controllerChangeSubject: Subject<ControllerItem> = new Subject<ControllerItem>();
+    valueChange: Subject<{ [key: string]: ControllerItem }> = new Subject<{ [key: string]: ControllerItem }>();
+    controllerDict: { [key: string]: ControllerItem } = {};
+    public value: FormVal = {};
+    errorsDict:ErrorsDict={};
+    public errorsChange: Subject<ErrorsDict>=new Subject<ErrorsDict>();
+    public isPass:boolean= false;
     constructor(
-        controllers: Controller[]
+        controllerOpts: ControllerOpt[]
     ) {
-        if (!controllers || !controllers.length) return;
-        this.controllers = controllers;
-        this.controllers.forEach(controller => {
-            this.handleController(controller);
-            this.appendValue(controller);
-            this.controllerDict[controller.id] = controller;
+        if(!controllerOpts||!controllerOpts.length)return;
+        controllerOpts.forEach(opt=>{
+           this.addController(new ControllerItem(opt));
         });
+        
         this.controllerChangeSubject.subscribe(controller => {
             this.valueChange.next(this.controllerDict);
         })
     }
-
-    appendValue(controller: Controller) {
-        this.value[controller.id] = controller.value;
-        Object.defineProperty(this.value, controller.id, {
-            get() {
-                return controller.value;
+    
+    addController(controller:ControllerItem){
+        controller.forkForm(this);
+        this.controllers.push(controller);
+        this.controllerDict[controller.id]=controller;
+        controller.valueChange.subscribe(c=>{
+            this.controllerChangeSubject.next(c);
+            this.valueChange.next(this.controllerDict);
+        });
+        // handle value
+        this.value[controller.id]=controller.value;
+        Object.defineProperty(this.value,controller.id,{
+            get(){
+                return controller.value
             },
-            set(v: ValueType) {
-                controller.value = v;
+            set(v: ValueType){
+                controller.value=v
             }
         });
+        // handle error
+        controller.errorsChange.subscribe(errors=>{
+            this.errorsDict[controller.id]=errors;
+            this.errorsChange.next(this.errorsDict);
+            this.isPass=this.checkPass();
+        })
     }
-
-    handleController(controller: Controller) {
-        controller._value = controller.value;
-        controller.errors = [];
-        const self = this;
-        controller.valueChange = new Subject<Controller>();
-        Object.defineProperty(controller, "value", {
-            get() {
-                return this._value;
-            },
-            set(v: ValueType) {
-                this._value = v;
-                if (!controller.validator) return;
-                controller.errors = [];
-                self.handleControllerValidators(controller);
-                this.valueChange.next(controller);
-                self.controllerChangeSubject.next(controller);
-            }
-        });
-        controller.reset = () => {
-            this.value[controller.id] = undefined;
-            controller.errors = [];
-            controller.valueChange && controller.valueChange.next(controller);
+   
+    checkPass():boolean{
+        for(let i in this.errorsDict){
+            if(this.errorsDict[i])return false;
         }
-        controller.errorsChange=new Subject<string[]>();
+        return true;
     }
-
-    async handleControllerValidators(controller: Controller) {
-        if (controller.validator instanceof Array) {
-            for(let validator of controller.validator){
-                await this.handleControllerValidator(controller,validator);
-            }
-        } else {
-            this.handleControllerValidator(controller, controller.validator);
-        }
-        controller.errorsChange&&controller.errorsChange.next(controller.errors||[]);
-    }
-
-    async handleControllerValidator(controller: Controller, validator: Validator) {
-        const isPass:boolean|Promise<boolean> = validator.apply(controller.value);
-        let result:boolean=false;
-        if(isPass instanceof Promise){
-            result=await isPass;
-        }else{
-            result=isPass;
-        }
-        if (result || !controller.errors) return;
-        controller.errors.push(
-            typeof (validator.errMessage) == "string" ? validator.errMessage : validator.errMessage(controller.value)
-        );
-    }
-
+    
+    
     reset() {
-        this.controllers.forEach(controller => {
-            controller.reset && controller.reset();
-        });
+        this.controllers.forEach(c=>c.reset());
     }
 
     toSerializer(): Record<string, any> {
         return this.value;
     }
 
-
-
-    get isPass(): boolean {
-        for (let controller of this.controllers) {
-            if (controller.errors && controller.errors.length) return false;
-        }
-        return true;
-    }
-
-    async checkValidators(): Promise<boolean> {
+    /**
+     * @return pass:boolean
+     */
+    async checkValidators():Promise<boolean>{
+        let error:boolean=false;
         for(let controller of this.controllers){
-            controller.errors = [];
-            await this.handleControllerValidators(controller);
-            controller.valueChange && controller.valueChange.next(controller);
+            if(!await controller.checkValidator())error=true;
         }
-        return this.isPass;
+        return !error;
     }
 }

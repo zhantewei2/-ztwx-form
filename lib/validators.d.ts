@@ -1,23 +1,28 @@
-import { Controller, Validator, ValueType } from "./share";
+import { Controller, ControllerOpt, ErrorVal, FormVal, Validator, ValueType } from "./share";
 import { SubjectOrder, Subject } from "./Subject";
+import { ControllerItem } from "./Controller";
 export { Controller, Validator, ValueType, Subject, SubjectOrder };
+export declare type ErrorsDict = Record<string, ErrorVal>;
 export declare class Form {
-    controllers: Controller[];
-    controllerChangeSubject: Subject<Controller>;
+    controllers: ControllerItem[];
+    controllerChangeSubject: Subject<ControllerItem>;
     valueChange: Subject<{
-        [key: string]: Controller;
+        [key: string]: ControllerItem;
     }>;
     controllerDict: {
-        [key: string]: Controller;
+        [key: string]: ControllerItem;
     };
-    value: Record<string, ValueType>;
-    constructor(controllers: Controller[]);
-    appendValue(controller: Controller): void;
-    handleController(controller: Controller): void;
-    handleControllerValidators(controller: Controller): Promise<void>;
-    handleControllerValidator(controller: Controller, validator: Validator): Promise<void>;
+    value: FormVal;
+    errorsDict: ErrorsDict;
+    errorsChange: Subject<ErrorsDict>;
+    isPass: boolean;
+    constructor(controllerOpts: ControllerOpt[]);
+    addController(controller: ControllerItem): void;
+    checkPass(): boolean;
     reset(): void;
     toSerializer(): Record<string, any>;
-    get isPass(): boolean;
+    /**
+     * @return pass:boolean
+     */
     checkValidators(): Promise<boolean>;
 }
