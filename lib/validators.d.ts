@@ -25,4 +25,8 @@ export declare class Form {
      * @return pass:boolean
      */
     checkValidators(): Promise<boolean>;
+    /**
+     * @return errMsg:string;
+     */
+    catchValidatorsErr(): Promise<string[] | void>;
 }

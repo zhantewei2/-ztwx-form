@@ -85,4 +85,19 @@ export class Form {
         }
         return !error;
     }
+
+    /**
+     * @return errMsg:string;
+     */
+    async catchValidatorsErr():Promise<string[]|void>{
+        return this.checkValidators().then((pass) => {
+            if (!pass) {
+                for (const i in this.errorsDict) {
+                    if(this.errorsDict[i]){
+                        return this.errorsDict[i]
+                    }
+                }
+            }
+        });
+    }
 }
