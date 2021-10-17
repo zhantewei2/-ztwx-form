@@ -1,5 +1,6 @@
 import {Form} from "./validators";
 import {ControllerOpt} from "./share";
+import { ControllerItem} from "./Controller";
 
 export class FormUpdateVersion extends Form{
     constructor(
@@ -23,8 +24,11 @@ export class FormUpdateVersion extends Form{
         this.fillOriginVal(originalValue);
     }
     fillOriginVal(value:Record<string, any>){
+        let controller:ControllerItem;
+        
         Object.keys(this.value).forEach((key:string)=>{
-            this.controllerDict[key].setOrigin(value[key])
+            controller=this.controllerDict[key];
+            controller&&controller.setOrigin(value[key])
         })
     }
     updateOriginValue(
