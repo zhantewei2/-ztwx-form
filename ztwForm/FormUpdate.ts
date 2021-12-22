@@ -73,6 +73,7 @@ export class FormUpdateVersion extends Form{
                     }
                 }
             })
+            this.changeOrderExists=true;
             return this._isChanged=this.checkChanged();
         }
         return this._isChanged;
