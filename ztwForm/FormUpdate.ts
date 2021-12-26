@@ -69,9 +69,10 @@ export class FormUpdateVersion extends Form{
                 for(let i in dict){
                     if(dict[i].changed){
                         this._isChanged=true;
-                        break;
+                        return;
                     }
                 }
+                this._isChanged=false;
             })
             this.changeOrderExists=true;
             return this._isChanged=this.checkChanged();
