@@ -8,6 +8,7 @@ import rangeLengthValidator from "./validators/rangeLength.validator";
 import requiredValidator from "./validators/required.validator";
 import regExpValidator from "./validators/regExp.validator";
 import fnValidator from "./validators/fn.validator";
+import notBlankValidator from "./validators/notBlank.validator";
 export {ControllerItem} from "./Controller";
 import {
     Controller,
@@ -29,6 +30,7 @@ export {
     rangeLengthValidator,
     rangeValidator,
     requiredValidator,
+    notBlankValidator,
     Form,
     Validator,
     ValueType,
