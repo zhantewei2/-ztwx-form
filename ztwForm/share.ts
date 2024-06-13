@@ -2,7 +2,7 @@ import {Subject, SubjectOrder} from "./Subject";
 
 export type ValidatorErrMessage = ((value: any) => string) | string;
 
-export type ValueType = string | number | undefined |boolean;
+export type ValueType = string | number | undefined |boolean | Array<any>;
 
 export type FormVal = Record<string,ValueType>;
 
